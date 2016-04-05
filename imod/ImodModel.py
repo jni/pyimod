@@ -124,7 +124,7 @@ class ImodModel(object):
                 print(data[0:4])
             self.version = data[4:9]
             data = fid.read(128)
-            self.name = data.split('\x00')[0]
+            self.name = data.split(b'\x00')[0]
             self.xMax = struct.unpack('>l', fid.read(4))[0]
             self.yMax = struct.unpack('>l', fid.read(4))[0]
             self.zMax = struct.unpack('>l', fid.read(4))[0]
