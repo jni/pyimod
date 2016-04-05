@@ -4,8 +4,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import os
 import struct
-import time
-import cv2
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -13,7 +11,6 @@ from scipy.spatial.distance import cdist
 from .ImodObject import ImodObject
 from .ImodContour import ImodContour
 from .ImodView import ImodView
-from .mrc import get_dims, mrc_to_numpy
 from .utils import is_integer, is_string
 import six
 from six.moves import range
@@ -612,128 +609,6 @@ class ImodModel(object):
                         print("    Transparency: {0} --> {1}".format(before,
                             self.Objects[iObject].transparency))
 
-    def removeBorderObjects(self, remove = True, fname = ''):
-        """
-        Removes all objects that contain contours touching either of the 6 
-        bounds of the image stack. If the filename of an MRC file is supplied
-        to the fname argument, a more rigorous search for boundary objects 
-        will be performed such that objects that are touching alignment-
-        induced borders will be removed. This on a slice-by-slice basis,
-        sequentially over all slices as follows:
-            1. Initialize a Numpy array of the current MRC slice.
-            2. Compute the Sobel gradient magnitude of the image.
-            3. Threshold the gradient magnitude, keeping only small values
-               (e.g. values <= 1). These pixels are likely to correspond to
-               borders, which have constant pixel value across the image.
-            4. Compute the distance transform (DT) of the thresholded gradient
-               magnitude.
-            5. Loop over all objects in the model file. Find contours that are
-               on the given slice. Test the value of DT at each point. If the
-               value is very small (e.g. <= 3), assume the point is on or over
-               the border and remove the object.
-
-        Input
-        =====
-        remove  - If True (default), will remove objects that touch borders. If
-                  False, will keep all objects, but color those that touch
-                  borders red, and those that do not green.
-        fname   - Filename of MRC for alignment-induced border removal.
-        """
- 
-        # Loop over all objects and contours. Find objects containing contours
-        # that touch either of the 6 borders. Append these object numbers to a
-        # list, cdel for subsequent deletion.
-        cdel = []
-        for iObject in range(0, self.nObjects):
-            for iContour in range(0, self.Objects[iObject].nContours):
-                pts = self.Objects[iObject].Contours[iContour].points
-                # Check if the contour's points contain any that touch either
-                # of the 6 boundaries in x, y, or z. If so, append the object
-                # number to the cdel list.
-                if (sum([x < 1 for x in pts[0::3]]) or 
-                    sum([x > self.xMax - 1 for x in pts [0::3]]) or
-                    sum([y < 1 for y in pts[1::3]]) or
-                    sum([y > self.yMax -1 for y in pts [1::3]]) or
-                    (0 in pts[2::3]) or
-                    (self.zMax - 1 in pts[2::3])):
-                    cdel.append(iObject)
-                    break
-
-        # Loop over all objects, and remove those that are in cdel. If remove
-        # is False, set the colors appropriately.
-        for iObj in range(self.nObjects -1, -1, -1):
-            if iObj in cdel:
-                if remove:
-                    del(self.Objects[iObj])
-                else:
-                    self.Objects[iObj].setColor(1, 0, 0)
-            else:
-                if not remove:
-                    self.Objects[iObj].setColor(0, 1, 0)
-
-        # Update the number of objects and views, if remove is True.
-        if remove:
-            self.nObjects -= len(cdel)
-            if self.view_set:
-                self.view_objvsize -= len(cdel)
-
-        # Run alignment-induced border removal, if desired
-        if fname:
-            cdel = []
-            nx, ny, nz = get_dims(fname)
-            fid = open(fname, mode = "rb")
-            fid.seek(1024, 0)
-            for iSlice in range(nz):
-                tic = time.clock()
-                # Get slice from the MRC stack
-                img = mrc_to_numpy(fid, nx, ny)
-
-                # Get the distance transform
-                dt = proc_border(img).astype('uint8')
-                print(np.max(dt))
-                toc = time.clock()
-               
-                print("Slice {0} processed. Elapsed time: {1} seconds.".format(
-                    iSlice + 1, toc - tic))
-
-                for iObj in range(self.nObjects):
-                    zvals = self.Objects[iObj].get_z_values()
-                    idx = np.where(np.asarray(zvals) == iSlice + 1)[0]
-                    if idx.any():
-                        for iCont in idx:
-                            pts = self.Objects[iObj].Contours[iCont].points
-                            nPts = self.Objects[iObj].Contours[iCont].nPoints
-                            pts = [int(x) for x in pts]
-                            pts = np.reshape(pts, [nPts, 3])
-                            pts[:,0] = pts[:,0] - 1
-                            pts[:,1] = ny - pts[:,1] 
-                            pts[:,[0, 1, 2]] = pts[:,[1, 0, 2]]
-                            dtvals = np.asarray([dt[pts[x,0], pts[x,1]] for x in
-                                range(nPts)])
-                            idxdt = np.where(dtvals <= 3)[0]
-                            if idxdt.any():
-                                print("Remove Object {0}".format(iObj+1))
-                                cdel.append(iObj)
-            fid.close()
-
-            # Loop over all objects, and remove those that are in cdel. If remove
-            # is False, set the colors appropriately.
-            for iObj in range(self.nObjects -1, -1, -1):
-                if iObj in cdel:
-                    if remove:
-                        del(self.Objects[iObj])
-                    else:
-                        self.Objects[iObj].setColor(1, 0, 0)
-                else:
-                    if not remove:
-                        self.Objects[iObj].setColor(0, 1, 0)
-
-            # Update the number of objects and views, if remove is True.
-            if remove:
-                self.nObjects -= len(cdel)
-                if self.view_set:
-                    self.view_objvsize -= len(cdel)
-
     def mergeAll(self):
         """
         Merges all objects into Object #1
@@ -823,30 +698,3 @@ def parse_name_str(nstr):
     else:
         raise ValueError('Invalid name string {0}'.format(nstr))
 
-def proc_border(img):
-    # Compute horizontal Sobel gradient
-    sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0)
-    sobelx = np.absolute(sobelx)
-
-    # Compute vertical Sobel gradient
-    sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1)
-    sobely = np.absolute(sobely)
-
-    # Compute gradient magnitude image
-    mag = np.sqrt(sobelx ** 2 + sobely ** 2)  
-    mag = np.uint8(mag)
-    del(img, sobelx, sobely)
-
-    # Threhold the gradient magnitude image
-    mag = cv2.threshold(mag, 2, 1, cv2.THRESH_BINARY)[1]
-
-    # Fill holes of the thresholded image
-    contour, hier = cv2.findContours(mag, cv2.RETR_CCOMP,
-        cv2.CHAIN_APPROX_SIMPLE)
-    for cnt in contour:
-        cv2.drawContours(mag, [cnt], 0, 255, -1) 
-
-    # Distance transform
-    mag = cv2.distanceTransform(mag, cv2.cv.CV_DIST_L1,
-        cv2.cv.CV_DIST_MASK_PRECISE)
-    return mag
