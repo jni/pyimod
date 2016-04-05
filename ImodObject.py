@@ -1,5 +1,7 @@
 from __future__ import division
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import struct
 import operator
@@ -8,6 +10,8 @@ from itertools import count
 from .ImodContour import ImodContour
 from .ImodMesh import ImodMesh
 from .utils import is_integer, is_string, set_bit
+import six
+from six.moves import range
 
 class ImodObject(object):
     _ids = count(0)
@@ -55,7 +59,7 @@ class ImodObject(object):
         mepa_set = 0,
         mepa_nBytes = 0,
         **kwargs):
-            self.id = self._ids.next()
+            self.id = next(self._ids)
             self.Contours = []
             self.Meshes = []
             self.Views = []
@@ -96,7 +100,7 @@ class ImodObject(object):
         while ( iContour <= self.nContours ) or ( iMesh <= self.nMeshes ):
             datatype = fid.read(4)
             if self.debug == 1:
-                print datatype
+                print(datatype)
             if datatype == 'CONT':
                 self.Contours.append(ImodContour(fid, debug = self.debug))
                 iContour = iContour + 1
@@ -108,7 +112,7 @@ class ImodObject(object):
             datatype = fid.read(4)
             if datatype == 'IMAT':
                 if self.debug == 1:
-                    print datatype
+                    print(datatype)
                 self.read_imat(fid)
             elif datatype == 'MEPA':
                 self.mepa_set = 1
@@ -117,7 +121,7 @@ class ImodObject(object):
                     self.mepa_byteString.append(struct.unpack('>B', 
                         fid.read(1))[0])
                 if self.debug == 1:
-                    print datatype, self.mepa_nBytes
+                    print(datatype, self.mepa_nBytes)
             else:
                 fid.seek(-4, 1)
                 break
@@ -232,7 +236,7 @@ class ImodObject(object):
         is_string(symbolStr, 'Symbol String')
         symbDict = {'circle': 0, 'none': 1, 'square': 2, 'triangle': 3, 
             'star':4}
-        if not symbDict.has_key(symbolStr):
+        if symbolStr not in symbDict:
             raise ValueError('{0} is not a valid symbol type'.format(symbolStr))
         self.symbol = symbDict[symbolStr]
         return self
@@ -261,7 +265,7 @@ class ImodObject(object):
               '<=': (lambda x,y: x<=y),
               '=': (lambda x,y: x==y),
               '==': (lambda x,y: x==y)}
-        if not ops.has_key(compStr):
+        if compStr not in ops:
             raise ValueError('{0} is not a valid operator'.format(compStr))
 
         # Loop to check for nPoints conditional statement
@@ -315,6 +319,6 @@ class ImodObject(object):
 
     def dump(self):
         from collections import OrderedDict as od
-        for key, value in od(sorted(self.__dict__.items())).iteritems():
-            print key, value
-        print "\n"
+        for key, value in six.iteritems(od(sorted(self.__dict__.items()))):
+            print(key, value)
+        print("\n")

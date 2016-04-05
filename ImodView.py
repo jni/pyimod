@@ -1,5 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import struct
 from .utils import is_string, is_integer
+import six
+from six.moves import range
 
 class ImodView(object):
 
@@ -109,6 +113,6 @@ class ImodView(object):
 
     def dump(self):
         from collections import OrderedDict as od
-        for key, value in od(sorted(self.__dict__.items())).iteritems():
-            print key, value
-        print "\n"
+        for key, value in six.iteritems(od(sorted(self.__dict__.items()))):
+            print(key, value)
+        print("\n")

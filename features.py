@@ -1,5 +1,7 @@
+from __future__ import absolute_import
 import subprocess
 import numpy as np
+from six.moves import range
 
 def imodinfo_e(fname, iObj, ncont):
     """

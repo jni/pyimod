@@ -1,7 +1,10 @@
 from __future__ import division
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 from .utils import is_string
+from six.moves import range
 
 def ImodExport(input, fnameout, **kwargs):
     iObject = kwargs.get('object', 0)
@@ -119,4 +122,4 @@ def export_vrml2(mesh, iObject, name, mats, scale, trans, fnameout):
     fid.write('  ]\n')
     fid.write('}\n')
     fid.close()
-    print "{0} written.".format(fnameout)
+    print("{0} written.".format(fnameout))

@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+import six
+from six.moves import range
 def ImodCmd(imodModel, cmdStr):
     from .ImodModel import ImodModel
     from .ImodWrite import ImodWrite
@@ -31,7 +34,7 @@ def random_filename(length):
     return fname
 
 def is_integer(var, varStr):
-    if not isinstance(var, (int, long)):
+    if not isinstance(var, six.integer_types):
         raise ValueError('{0} must be an integer.'.format(varStr))
     else:
         return

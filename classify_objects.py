@@ -2,6 +2,8 @@
 
 from __future__ import division
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import subprocess
 import pyimod
@@ -14,6 +16,7 @@ import multiprocessing as mp
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from six.moves import range
 
 def imodinfo_e(fname, iObj, ncont):
     cmd = "imodinfo -e -o {0} {1}".format(iObj + 1, fname)
@@ -211,7 +214,7 @@ def fit_quadratic(Araw, iObj, z, fv):
 
     # Fit a quadratic to the evolution of area across Z. Calculate the R-
     # squared value of this fit.
-    x = range(len(A))  
+    x = list(range(len(A)))  
     p = np.polyfit(x, A, 2)
     rsq = calc_rsq(p, x, A)
 
@@ -228,7 +231,7 @@ def calc_rsq(p, x, y):
     return 1 - ssres/sstot
 
 def extract_features(iObj):
-    print "Processing Object {0}".format(iObj)
+    print("Processing Object {0}".format(iObj))
     iiv, volume, sa = imodinfo_v(fname_tmp, iObj, mod.Objects[iObj].nContours)
     iie = imodinfo_e(fname_tmp, iObj, mod.Objects[iObj].nContours)
 
@@ -272,7 +275,7 @@ def extract_features(iObj):
 
 def run_ef():
     pool = mp.Pool(processes = ncpu)
-    pool.map(extract_features, range(mod.nObjects))
+    pool.map(extract_features, list(range(mod.nObjects)))
 #    for i in range(mod.nObjects): #range(mod.nObjects):
 #        vol = extract_features(i)
 
@@ -284,11 +287,11 @@ if __name__ == '__main__':
 
     # Load model file
     fname = 'ZT04_01_isotropic_nuclei_L8_sort.mod'
-    print "Loading IMOD model file: {0}".format(fname)
+    print("Loading IMOD model file: {0}".format(fname))
     mod = pyimod.ImodModel(fname)
     
     # Remove empty contours.
-    print "Removing empty contours and objects."
+    print("Removing empty contours and objects.")
     mod.removeEmptyContours()
 
     # Keep objects with greater than 2 contours. First, run in remove =
@@ -300,7 +303,7 @@ if __name__ == '__main__':
     mod.filterByNContours('>', 2)
 
     # Remove objects touching the border
-    print "Removing border objects."
+    print("Removing border objects.")
     mod_tmp = mod
     mod_tmp.removeBorderObjects(remove = False)
     pyimod.ImodWrite(mod_tmp, 'output_02_removeBorderObjects.mod')
@@ -313,7 +316,7 @@ if __name__ == '__main__':
     
     # Write output to a temporary model file
     fname_tmp = pyimod.utils.random_filename(30)
-    print "Writing to temporary IMOD model file: {0}".format(fname_tmp)
+    print("Writing to temporary IMOD model file: {0}".format(fname_tmp))
     pyimod.ImodWrite(mod, fname_tmp)
     del mod
 
@@ -322,13 +325,13 @@ if __name__ == '__main__':
 
     # Loop over all objects. Extract relevant features. Store each object's 
     # feature vector to an individually numbered CSV file.
-    print timeit.timeit('run_ef()', 'from __main__ import run_ef', number = 1)
+    print(timeit.timeit('run_ef()', 'from __main__ import run_ef', number = 1))
 
     # Append all individually numbered CSVs to one file
     filenames = sorted(glob.glob('obj_*.csv'))
     with open('features.csv', 'w') as fid:
         for fname in filenames:
-            print "Loading file {0}".format(fname)
+            print("Loading file {0}".format(fname))
             with open(fname) as infile:
                 fid.write(infile.read())
                 fid.write('\n')
@@ -341,10 +344,10 @@ if __name__ == '__main__':
     fv = StandardScaler().fit_transform(fv)
 
     # Run clustering
-    print "Running k-means clustering with N = 2." 
+    print("Running k-means clustering with N = 2.") 
     kmeans = KMeans(n_clusters = 2).fit_predict(fv)
     idx = np.where(kmeans)[0]
-    print idx 
+    print(idx) 
 
     # Manipulate objects according to clustering
     for iObj in range(mod.nObjects):
@@ -354,5 +357,5 @@ if __name__ == '__main__':
             mod.Objects[iObj].setColor(1, 0, 0)
 
     # Write output model file
-    print "Writing output IMOD file"
+    print("Writing output IMOD file")
     pyimod.ImodWrite(mod, 'output_03_kmeans.mod')

@@ -1,4 +1,7 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import struct
+import six
 
 class ImodContour(object):
 
@@ -28,7 +31,7 @@ class ImodContour(object):
 
     def dump(self):
         from collections import OrderedDict as od
-        for key, value in od(sorted(self.__dict__.items())).iteritems():
-            print key, value
-        print "\n"
+        for key, value in six.iteritems(od(sorted(self.__dict__.items()))):
+            print(key, value)
+        print("\n")
 

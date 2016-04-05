@@ -1,4 +1,6 @@
+from __future__ import absolute_import
 import struct
+from six.moves import range
 
 def ImodWrite(imodModel, fname):
     with open(fname, mode = "wb") as fid:

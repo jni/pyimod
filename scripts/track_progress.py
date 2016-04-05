@@ -2,11 +2,14 @@
 
 from __future__ import division
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 import datetime
 import pyimod
 from optparse import OptionParser
+from six.moves import range
 
 def parse_args():
     global p
@@ -26,11 +29,11 @@ def check_args(args):
 
 # Print error messages and exit
 def usage(errstr):
-    print ""
-    print "ERROR: {0}".format(errstr)
-    print ""
+    print("")
+    print("ERROR: {0}".format(errstr))
+    print("")
     p.print_help()
-    print ""
+    print("")
     exit(1)
 
 if __name__ == '__main__':

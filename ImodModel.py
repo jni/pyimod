@@ -1,5 +1,7 @@
 from __future__ import division
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import struct
 import time
@@ -13,6 +15,8 @@ from .ImodWrite import ImodWrite
 from .ImodView import ImodView
 from .mrc import get_dims, mrc_to_numpy
 from .utils import is_integer, is_string
+import six
+from six.moves import range
 
 class ImodModel(object):
     global unitDict, opsDict
@@ -101,26 +105,26 @@ class ImodModel(object):
             self.getColormap()
 
     def print_header(self):
-        print "Filename: {0}".format(self.filename)
-        print ""
-        print "Image Dimensions: {0} {1} {2}".format(self.xMax, self.yMax, 
-            self.zMax)
-        print "Image Offsets: {0} {1} {2}".format(self.xOffset, self.yOffset,
-            self.zOffset)
-        print ""
-        print "Number of Objects: {0}".format(self.nObjects)
-        print "Model Scales: {0} {1} {2}".format(self.xScale, self.yScale,
-            self.zScale)
-        print "Voxel Size (X/Y): {0} {1}".format(self.pixelSizeXY, self.units)
-        print "Voxel Size (Z): {0} {1}".format(self.pixelSize * self.zScale,
-            self.units)
+        print("Filename: {0}".format(self.filename))
+        print("")
+        print("Image Dimensions: {0} {1} {2}".format(self.xMax, self.yMax, 
+            self.zMax))
+        print("Image Offsets: {0} {1} {2}".format(self.xOffset, self.yOffset,
+            self.zOffset))
+        print("")
+        print("Number of Objects: {0}".format(self.nObjects))
+        print("Model Scales: {0} {1} {2}".format(self.xScale, self.yScale,
+            self.zScale))
+        print("Voxel Size (X/Y): {0} {1}".format(self.pixelSizeXY, self.units))
+        print("Voxel Size (Z): {0} {1}".format(self.pixelSize * self.zScale,
+            self.units))
 
     def read_file(self):
         with open(self.filename, mode = "rb") as fid:
             self.fid = fid
             data = fid.read(8)
             if self.debug == 1:
-                print data[0:4]
+                print(data[0:4])
             self.version = data[4:9]
             data = fid.read(128)
             self.name = data.split('\x00')[0]
@@ -160,7 +164,7 @@ class ImodModel(object):
                 datatype = data[0:4]
                 fid.seek(-64, 1)
                 if self.debug == 1:
-                    print datatype
+                    print(datatype)
                 if datatype == 'OBJT':
                     self.Objects.append(ImodObject(self.fid,
                         debug = self.debug))
@@ -169,7 +173,7 @@ class ImodModel(object):
             while True:
                 data = fid.read(4)
                 if self.debug == 1: 
-                    print data
+                    print(data)
                 if data == 'VIEW':
                     nViewBytes = struct.unpack('>i', fid.read(4))[0]
                     # Handle the case in which IMOD has created a 4 byte VIEW
@@ -188,7 +192,7 @@ class ImodModel(object):
                 elif data == 'IEOF':
                     break
                 else:
-                    print data
+                    print(data)
                     break
 
         fid.close()
@@ -301,7 +305,7 @@ class ImodModel(object):
         """
         Sets the unit string according to the integer value read from the file.
         """
-        for unitStr, unitInt in unitDict.iteritems():
+        for unitStr, unitInt in six.iteritems(unitDict):
             if int(unitInt) == self.units:
                 self.unitsStr = unitStr
                 break
@@ -342,7 +346,7 @@ class ImodModel(object):
         """
         is_string(units, 'Units')
         self.unitsStr = units
-        if unitDict.has_key(units):
+        if units in unitDict:
             self.units = unitDict[units]
         else:
             self.units = 0
@@ -365,7 +369,7 @@ class ImodModel(object):
         """
         is_string(compStr, 'Comparison string')
         is_integer(nCont, 'Number of contours')
-        if not opsDict.has_key(compStr):
+        if compStr not in opsDict:
             raise ValueError('{0} is not a valid operator'.format(compStr))
 
         # Loop to check for nContours conditional statement
@@ -413,7 +417,7 @@ class ImodModel(object):
         is_string(compStr, 'Comparison String')
         is_integer(d_thresh, 'Distance')
 
-        if not opsDict.has_key(compStr):
+        if compStr not in opsDict:
             raise ValueError('{0} is not a valid operator'.format(compStr))
    
         if objRef > self.nObjects:
@@ -436,7 +440,7 @@ class ImodModel(object):
             else:
                 ckeep+=1
                 decStr = ''
-            print "{0}. dmin = {1} {2}. {3}".format(str(c+1).zfill(6), d_min, self.unitsStr, decStr)
+            print("{0}. dmin = {1} {2}. {3}".format(str(c+1).zfill(6), d_min, self.unitsStr, decStr))
             c+=1
 
         self.nObjects = len(self.Objects)
@@ -453,7 +457,7 @@ class ImodModel(object):
         is_string(compStr, 'Comparison String')
         is_integer(d_thresh, 'Distance')
 
-        if not opsDict.has_key(compStr):
+        if compStr not in opsDict:
             raise ValueError('{0} is not a valid operator'.format(compStr))
 
         if objRef > self.nObjects:
@@ -477,7 +481,7 @@ class ImodModel(object):
                 else:
                     ckeep+=1
                     decStr = ''
-                print "{0} {1}. dmin = {2} {3}. {4}".format(str(iObject+1).zfill(6), str(c+1).zfill(6), d_min, self.unitsStr, decStr)
+                print("{0} {1}. dmin = {2} {3}. {4}".format(str(iObject+1).zfill(6), str(c+1).zfill(6), d_min, self.unitsStr, decStr))
                 c+=1
             self.Objects[iObject].nContours = len(self.Objects[iObject].Contours)
             iObject+=1
@@ -485,7 +489,7 @@ class ImodModel(object):
     def moveObjects(self, destObj, moveObjs):
         is_integer(destObj, 'Destination Object')
         destObj-=1
-        if isinstance(moveObjs, (int, long)):
+        if isinstance(moveObjs, six.integer_types):
             objList = moveObjs
         else:
             objList = parse_obj_list(moveObjs)
@@ -512,9 +516,9 @@ class ImodModel(object):
         self.addObject()
 
         if (dim % 2):
-            zlst = range(-(dim//2), dim//2+1)
+            zlst = list(range(-(dim//2), dim//2+1))
         else:
-            zlst = range(-(dim//2)+1, dim//2+1)
+            zlst = list(range(-(dim//2)+1, dim//2+1))
 
         for z in zlst:
             self.Objects[-1].Contours.append(ImodContour())
@@ -542,7 +546,7 @@ class ImodModel(object):
         # Add ImodObject and ImodView objects
         self.addObject()
 
-        zlst = range(-r+1, r)
+        zlst = list(range(-r+1, r))
         thetas = [(2*pi*i)/N for i in range(N)]
 
         for idx, z in enumerate(zlst):
@@ -587,7 +591,7 @@ class ImodModel(object):
                 iName = self.Objects[iObject].name
                 if iName in td:
                     props = td[iName]
-                    print "Editing object {0} named {1}.".format(iObject, iName)
+                    print("Editing object {0} named {1}.".format(iObject, iName))
                 else:
                     continue
                 for iProp in range(len(props)):
@@ -598,21 +602,21 @@ class ImodModel(object):
                             self.Objects[iObject].blue)
                         r, g, b = [float(x) for x in props[iProp].split()]
                         self.Objects[iObject].setColor(r, g, b)
-                        print "    Color: {0} --> {1:.2f},{2:.2f},{3:.2f}".format(
+                        print("    Color: {0} --> {1:.2f},{2:.2f},{3:.2f}".format(
                             before, self.Objects[iObject].red, 
-                            self.Objects[iObject].green, self.Objects[iObject].blue)
+                            self.Objects[iObject].green, self.Objects[iObject].blue))
                     elif keys[iProp+1] == 'linewidth':
                         before = self.Objects[iObject].lineWidth2D
                         lw = int(props[iProp])
                         self.Objects[iObject].setLineWidth(lw)
-                        print "    Line Width: {0} --> {1}".format(before, 
-                            self.Objects[iObject].lineWidth2D)
+                        print("    Line Width: {0} --> {1}".format(before, 
+                            self.Objects[iObject].lineWidth2D))
                     elif keys[iProp+1] == 'transparency':
                         before = self.Objects[iObject].transparency
                         transp = int(props[iProp])
                         self.Objects[iObject].setTransparency(transp)
-                        print "    Transparency: {0} --> {1}".format(before,
-                            self.Objects[iObject].transparency)
+                        print("    Transparency: {0} --> {1}".format(before,
+                            self.Objects[iObject].transparency))
 
     def removeBorderObjects(self, remove = True, fname = ''):
         """
@@ -692,11 +696,11 @@ class ImodModel(object):
 
                 # Get the distance transform
                 dt = proc_border(img).astype('uint8')
-                print np.max(dt)
+                print(np.max(dt))
                 toc = time.clock()
                
-                print "Slice {0} processed. Elapsed time: {1} seconds.".format(
-                    iSlice + 1, toc - tic)
+                print("Slice {0} processed. Elapsed time: {1} seconds.".format(
+                    iSlice + 1, toc - tic))
 
                 for iObj in range(self.nObjects):
                     zvals = self.Objects[iObj].get_z_values()
@@ -714,7 +718,7 @@ class ImodModel(object):
                                 range(nPts)])
                             idxdt = np.where(dtvals <= 3)[0]
                             if idxdt.any():
-                                print "Remove Object {0}".format(iObj+1)
+                                print("Remove Object {0}".format(iObj+1))
                                 cdel.append(iObj)
             fid.close()
 
@@ -764,9 +768,9 @@ class ImodModel(object):
 
     def dump(self):
         from collections import OrderedDict as od
-        for key, value in od(sorted(self.__dict__.items())).iteritems():
-            print key, value
-        print "\n"
+        for key, value in six.iteritems(od(sorted(self.__dict__.items()))):
+            print(key, value)
+        print("\n")
 
 """
 Utilities
