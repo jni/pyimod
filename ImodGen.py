@@ -1,5 +1,4 @@
 from .ImodModel import ImodModel
-from .ImodObject import ImodObject
 from .ImodWrite import ImodWrite
 from .utils import ImodCmd
 

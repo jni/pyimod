@@ -5,6 +5,11 @@ from .ImodContour import ImodContour
 from .ImodMesh import ImodMesh
 from .ImodWrite import ImodWrite
 from .ImodExport import ImodExport
-from .ImodGen import *
-from .mrc import *
 from .utils import ImodCmd
+from .ImodGen import blankTrainingModel, tutorialModel
+from .mrc import get_dims, mrc_to_numpy, get_slice
+
+__all__ = ['ImodModel', 'ImodObject', 'ImodContour', 'ImodMesh', 'ImodWrite',
+           'ImodExport', 'ImodCmd',
+           'blankTrainingModel', 'tutorialModel',
+           'get_dims', 'mrc_to_numpy', 'get_slice']

@@ -202,7 +202,6 @@ def calc_stats(datain, iObj, z, fv):
     return fv
 
 def fit_quadratic(Araw, iObj, z, fv):
-    ncont = mod.Objects[iObj].nContours
 
     # Loop from the minimum Z to the maximum Z. Sum up the areas enclosed by
     # all contours on the given Z value. Convert area to microns squared, and

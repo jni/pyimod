@@ -8,28 +8,28 @@ import time
 import cv2
 
 import numpy as np
+from scipy.spatial.distance import cdist
 
 from .ImodObject import ImodObject
 from .ImodContour import ImodContour
-from .ImodWrite import ImodWrite
 from .ImodView import ImodView
 from .mrc import get_dims, mrc_to_numpy
 from .utils import is_integer, is_string
 import six
 from six.moves import range
 
+unitDict = {'pix': 0, 'km': 3, 'm': 1, 'cm': -2, 'mm': -3, 'microns': -6,
+    'nm': -9, 'Angstroms': -10, 'pm': -12}
+
+opsDict = {'>': (lambda x,y: x>y),
+      '<': (lambda x,y: x<y),
+      '>=': (lambda x,y: x>=y),
+      '<=': (lambda x,y: x<=y),
+      '=': (lambda x,y: x==y),
+      '==': (lambda x,y: x==y)}
+
+
 class ImodModel(object):
-    global unitDict, opsDict
-    unitDict = {'pix': 0, 'km': 3, 'm': 1, 'cm': -2, 'mm': -3, 'microns': -6,
-        'nm': -9, 'Angstroms': -10, 'pm': -12}
-
-    opsDict = {'>': (lambda x,y: x>y),
-          '<': (lambda x,y: x<y),
-          '>=': (lambda x,y: x>=y),
-          '<=': (lambda x,y: x<=y),
-          '=': (lambda x,y: x==y),
-          '==': (lambda x,y: x==y)}
-
     def __init__(self,
         filename = None,
         cmap = {'name': 'imod'},
@@ -408,8 +408,6 @@ class ImodModel(object):
               other vertex). This can be used to save time.
         """
         global np, cdist
-        import numpy as np
-        from scipy.spatial.distance import cdist
 
         skip = kwargs.get('skip', 1)
 
@@ -421,7 +419,7 @@ class ImodModel(object):
             raise ValueError('{0} is not a valid operator'.format(compStr))
    
         if objRef > self.nObjects:
-            raise valueError('Reference object does not exist within the model.')
+            raise ValueError('Reference object does not exist within the model.')
 
         v_ref = get_vertices(self, objRef - 1, skip)
 
@@ -446,10 +444,6 @@ class ImodModel(object):
         self.nObjects = len(self.Objects)
 
     def filterByContourDistance(self, objRef, compStr, d_thresh, **kwargs):
-        global np, cdist
-        import numpy as np
-        from scipy.spatial.distance import cdist 
-
         skip_ref = kwargs.get('skip_ref', 1)
         skip_cont = kwargs.get('skip_cont', 1)
 
@@ -461,7 +455,7 @@ class ImodModel(object):
             raise ValueError('{0} is not a valid operator'.format(compStr))
 
         if objRef > self.nObjects:
-            raise valueError('Reference object does not exist within the model.')
+            raise ValueError('Reference object does not exist within the model.')
 
         v_ref = get_vertices(self, objRef - 1, skip_ref)
 
@@ -778,7 +772,7 @@ Utilities
 
 def get_vertices(model, iObject, skip):
     if len(model.Objects[iObject].Meshes) > 1:
-        raise valueError('Object {0} has more than 1 mesh'.format(iObject))
+        raise ValueError('Object {0} has more than 1 mesh'.format(iObject))
     v = np.array(model.Objects[iObject].Meshes[0].vertices)
     v = v.reshape(v.shape[0]/3, 3)
     v = v[0::2]
